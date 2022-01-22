@@ -1,19 +1,23 @@
 class UpcomingMediaCard extends HTMLElement {
   set hass(hass) {
+    let card = "";
     if (!this.content) {
-      const card = document.createElement("ha-card");
+      card = document.createElement("ha-card");
       card.header = this.config.title;
+      card.id = "card";
       this.content = document.createElement("div");
-      this.content.style.padding = "5px 10px";
+      this.content.id = "container";
       card.appendChild(this.content);
       this.appendChild(card);
     }
-
     const entity = this.config.entity;
     if (!hass.states[entity]) return;
     let service = this.config.entity.slice(7, 11);
-    let data = hass.states[entity].attributes.data
-    const json = typeof(data) == "object" ? hass.states[entity].attributes.data : JSON.parse(hass.states[entity].attributes.data);
+    let data = hass.states[entity].attributes.data;
+    const json =
+      typeof data == "object"
+        ? hass.states[entity].attributes.data
+        : JSON.parse(hass.states[entity].attributes.data);
     if (!json[1] && this.config.hide_empty) this.style.display = "none";
     if (!json || !json[1] || this.prev_json == JSON.stringify(json)) return;
     this.prev_json = JSON.stringify(json);
@@ -27,7 +31,7 @@ class UpcomingMediaCard extends HTMLElement {
     const timeform = {
       hour12: this.config.clock != 24,
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     };
     const title_text = this.config.title_text || json[0]["title_default"];
     const line1_text = this.config.line1_text || json[0]["line1_default"];
@@ -43,14 +47,14 @@ class UpcomingMediaCard extends HTMLElement {
       this.config.line3_size || this.config.line_size || "small";
     const line4_size =
       this.config.line4_size || this.config.line_size || "small";
-    const tSize = size =>
+    const tSize = (size) =>
       size == "large" ? "18" : size == "medium" ? "14" : "12";
     const size = [
       tSize(title_size),
       tSize(line1_size),
       tSize(line2_size),
       tSize(line3_size),
-      tSize(line4_size)
+      tSize(line4_size),
     ];
     const defaultClr = (poster, fanart) => (view == "poster" ? poster : fanart);
     const title_color =
@@ -75,7 +79,7 @@ class UpcomingMediaCard extends HTMLElement {
     const accent =
       this.config.accent_color || defaultClr("var(--primary-color)", "#000");
     const border = this.config.border_color || defaultClr("#fff", "#000");
-    const shadows = conf =>
+    const shadows = (conf) =>
       this.config.all_shadows == undefined
         ? conf == undefined
           ? true
@@ -93,191 +97,81 @@ class UpcomingMediaCard extends HTMLElement {
 
     let style = document.createElement("style");
     style.setAttribute("id", "umc_style");
-    if (view == "poster" && !this.querySelector('[id="umc_style"]')) {
-      style.textContent = `
-        .${service}_${view} {
-          width:100%;
-          margin-left: auto;
-          margin-right: auto;
-          margin-bottom: 10px;
-          position: relative;
-          display: inline-block;
+    style.textContent = `
+        #name {
+          font-weight: 600;
+        }
+        #name, #state {
+          font-size: 1.19vw;
+          letter-spacing: 0.05vw;
+          color: white;
+          line-height: 125%;
+        }
+        #state::first-letter {
+          text-transform: uppercase;
+        }
+        #blur, #overlayx {
+          padding: 5%;
+          background-color: rgba(0, 0, 0, 0.2);
+        }
+        /* portrait */
+        @media screen and (max-width: 1200px) {
+          #name, #state {
+            font-size: 2vw;
+            letter-spacing: 0.05vw;
+          }
+        }
+        /* phone */
+        @media screen and (max-width: 800px) {
+          #name, #state {
+            font-size: 3.1vw;
+            letter-spacing: 0.12vw;
+          }
+        }
+
+        upcoming-media-card {
+          display: flex;
+          height: 100%;
+        }
+        #card {
+          display: flex;
+          height: 100%;
+          width: 100%;
+          border-radius: var(--custom-button-card-border-radius); 
+          overflow: clip;
+        }
+        #container {
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          font-family: Sf Display, Roboto; 
+          justify-content: end;
+          transition: none 0s ease 0s; 
+          --mdc-ripple-color:rgba(255, 255, 255, 0.3); 
+          color: rgba(255, 255, 255, 0.3); 
+          background-color: rgba(115, 115, 115, 0.2); 
+        }
+        .ellipsis {
+          text-overflow: ellipsis;
+          white-space: nowrap;
           overflow: hidden;
-        }
-        .${service}_${view} ha-icon {
-          top: -2px;
-          right: 3px;
-          z-index: 2;
-          width: 17%;
-          height: 17%;
-          position:absolute;
-          color:${icon_color};
-          filter: drop-shadow( 0px 0px 1px rgba(0,0,0,1));
-          ${icon_hide};
-        }
-        .${service}_${view} img {
-          width:100%;
-          visibility:hidden;
-        }
-        .${service}_svg_${view} {
-          width:55%;
-          margin-top:5%;
-          margin-left:0;
-          vertical-align:top;
-          overflow:visible;
-          z-index:1;
-        }
-        .${service}_container_${view} {
-          position:relative;
-          outline: 5px solid #fff;
-          width:30%;
-          outline:5px solid ${border};
-          box-shadow:${boxshdw} rgba(0,0,0,.8);
-          float:left;
-          background-position: center;
-          background-repeat: no-repeat;
-          background-size: cover;
-          margin:5px 0 15px 5px;
-        }
-        .${service}_flag_${view} {
-          z-index: 1;
-          height: 100%;
-          width: 100%;
-          position: absolute;
-          bottom: 0;
-          right: 0;
-          fill:${flag_color};
-        }
-        .${service}_flag_${view} svg{
-          float:right;
-          width: 100%;
-          height: 100%;
-          margin:0;
-          filter: drop-shadow( -1px 1px 1px rgba(0,0,0,.5));
-        }
-        .${service}_line0_${view} {
-          font-weight:600;
-          font-size:${size[0]}px;
-          text-shadow:${txtshdw} rgba(0,0,0,0.9);
-          fill:${title_color};
-        }
-        .${service}_line1_${view} {
-          font-size:${size[1]}px;
-          text-shadow:${txtshdw} rgba(0,0,0,0.9);
-          fill:${line1_color};
-        }
-        .${service}_line2_${view} {
-          font-size:${size[2]}px;
-          text-shadow:${txtshdw} rgba(0,0,0,0.9);
-          fill:${line2_color};
-        }
-        .${service}_line3_${view} {
-          font-size:${size[3]}px;
-          text-shadow:${txtshdw} rgba(0,0,0,0.9);
-          fill:${line3_color};
-        }
-        .${service}_line4_${view} {
-          font-size:${size[4]}px;
-          text-shadow:${txtshdw} rgba(0,0,0,0.9);
-          fill:${line4_color};
           }
       `;
-    } else if (!this.querySelector('[id="umc_style"]')) {
-      style.textContent = `
-        .${service}_${view} {
-          width:100%;
-          overflow:hidden;
-          margin-left: auto;
-          margin-right: auto;
-          margin-bottom: 10px;
-          background-repeat:no-repeat;
-          background-size:auto 100%;
-          box-shadow:${boxshdw} rgba(0,0,0,.8);
-          position:relative;
-        }
-        .${service}_${view} ha-icon {
-          top: 5px;
-          margin-right: -19px;
-          right:0;
-          z-index: 2;
-          width: 15%;
-          height: 15%;
-          position:absolute;
-          color:${icon_color};
-          filter: drop-shadow( 0px 0px 1px rgba(0,0,0,1));
-          ${icon_hide};
-        }
-        .${service}_svg_${view} {
-          overflow:visible;
-          width:55%;
-          margin-top:1%;
-          margin-left:2.5%;
-          alignment-baseline:text-after-edge;
-        }
-        .${service}_fan_${view} {
-          width:100%;
-          background:linear-gradient(to right, ${accent} 48%,
-          transparent 70%,${accent} 100%);
-          margin:auto;
-          box-shadow:inset 0 0 0 3px ${border};
-        }
-        .${service}_flag_${view} {
-          z-index: 1;
-          height: 100%;
-          width: 100%;
-          position: absolute;
-          margin-top:3px;
-          margin-right:3px;
-          right: 0;
-          fill:${flag_color};
-        }
-        .${service}_flag_${view} svg{
-          float:right;
-          width: 100%;
-          height: 100%;
-          margin:0;
-          filter: drop-shadow( -1px 1px 1px rgba(0,0,0,.5));
-        }
-        .${service}_line0_${view} {
-          font-weight:600;
-          font-size:${size[0]}px;
-          text-shadow:${txtshdw} rgba(0,0,0,0.9);
-          fill:${title_color};
-        }
-        .${service}_line1_${view} {
-          font-size:${size[1]}px;
-          text-shadow:${txtshdw} rgba(0,0,0,0.9);
-          fill:${line1_color};
-        }
-        .${service}_line2_${view} {
-          font-size:${size[2]}px;
-          text-shadow:${txtshdw} rgba(0,0,0,0.9);
-          fill:${line2_color};
-        }
-        .${service}_line3_${view} {
-          font-size:${size[3]}px;
-          text-shadow:${txtshdw} rgba(0,0,0,0.9);
-          fill:${line3_color};
-        }
-        .${service}_line4_${view} {
-          font-size:${size[4]}px;
-          text-shadow:${txtshdw} rgba(0,0,0,0.9);
-          fill:${line3_color};
-        }
-      `;
-    }
     this.content.innerHTML = "";
 
     // Truncate text...
     function truncate(text, chars) {
       // When to truncate depending on size
-      chars = chars == 'large' ? 23 : chars == 'medium' ? 28 : 35;
+      chars = chars == "large" ? 23 : chars == "medium" ? 28 : 35;
       // Remove parentheses & contents: "Shameless (US)" becomes "Shameless".
-      text = text.replace(/ *\([^)]*\) */g, ' ');
+      text = text.replace(/ *\([^)]*\) */g, " ");
       // Truncate only at whole word w/ no punctuation or space before ellipsis.
       if (text.length > chars) {
         for (let i = chars; i > 0; i--) {
-          if (text.charAt(i).match(/( |\s|:|-|;|"|'|,)/) && text.charAt(i - 1).match(/[a-zA-Z0-9_]/)) {
+          if (
+            text.charAt(i).match(/( |\s|:|-|;|"|'|,)/) &&
+            text.charAt(i - 1).match(/[a-zA-Z0-9_]/)
+          ) {
             return `${text.substring(0, i)}...`;
           }
         }
@@ -293,10 +187,10 @@ class UpcomingMediaCard extends HTMLElement {
       let fd_day, fd_month;
       if (String(input_date).match(/[T]\d+[:]\d+[:]\d+[Z]/)) {
         fd_day = new Date(input_date).toLocaleDateString([], {
-          day: "2-digit"
+          day: "2-digit",
         });
         fd_month = new Date(input_date).toLocaleDateString([], {
-          month: "2-digit"
+          month: "2-digit",
         });
         // Match date string. ie: 2018-10-31
       } else if (String(input_date).match(/\d+[-]\d+[-]\d+/)) {
@@ -310,17 +204,18 @@ class UpcomingMediaCard extends HTMLElement {
       else return `${fd_month}/${fd_day}`;
     }
 
+    let image = "";
     for (let count = 1; count <= max; count++) {
-      const item = key => json[count][key];
+      const item = (key) => json[count][key];
       if (!item("airdate")) continue;
       if (this.config.hide_flagged && item("flag")) continue;
       else if (this.config.hide_unflagged && !item("flag")) continue;
       let airdate = new Date(item("airdate"));
       let dflag = item("flag") && flag ? "" : "display:none;";
-      let image =
+      image =
         view == "poster" ? item("poster") : item("fanart") || item("poster");
       if (image && !image.includes("http")) {
-        image = hass.hassUrl().substring(0, hass.hassUrl().length - 1) + image
+        image = hass.hassUrl().substring(0, hass.hassUrl().length - 1) + image;
       }
       let daysBetween = Math.round(
         Math.abs(
@@ -352,7 +247,8 @@ class UpcomingMediaCard extends HTMLElement {
       let char = [title_size, line1_size, line2_size, line3_size, line4_size];
 
       // Keyword map for replacement, return null if empty so we can hide empty sections
-      let keywords = /\$title|\$episode|\$genres|\$number|\$rating|\$release|\$runtime|\$studio|\$day|\$date|\$time|\$aired/g;
+      let keywords =
+        /\$title|\$episode|\$genres|\$number|\$rating|\$release|\$runtime|\$studio|\$day|\$date|\$time|\$aired/g;
       let keys = {
         $title: item("title") || null,
         $episode: item("episode") || null,
@@ -365,14 +261,14 @@ class UpcomingMediaCard extends HTMLElement {
         $day: day || null,
         $time: airdate.toLocaleTimeString([], timeform) || null,
         $date: format_date(item("airdate")) || null,
-        $aired: format_date(item("aired")) || null
+        $aired: format_date(item("aired")) || null,
       };
 
       // Replace keywords in lines
       for (let i = 0; i < line.length; i++) {
         line[i] = line[i].replace(" - ", "-");
         // Split at '-' so we can ignore entire contents if keyword returns null
-        let text = line[i].replace(keywords, val => keys[val]).split("-");
+        let text = line[i].replace(keywords, (val) => keys[val]).split("-");
         let filtered = [];
         // Rebuild lines, ignoring null
         for (let t = 0; t < text.length; t++) {
@@ -380,7 +276,7 @@ class UpcomingMediaCard extends HTMLElement {
           else filtered.push(text[t]);
         }
         // Replacing twice to get keywords in component generated strings
-        text = filtered.join(" - ").replace(keywords, val => keys[val]);
+        text = filtered.join(" - ").replace(keywords, (val) => keys[val]);
 
         // Shifting header text around depending on view & size
         let svgshift, y;
@@ -397,67 +293,20 @@ class UpcomingMediaCard extends HTMLElement {
             i == 0 ? `x="15" y="${y}" dy="1.3em" ` : `x="15" dy="1.3em" `;
 
         // Build lines HTML or empty line
-        line[i] = line[i].match("empty")
-          ? `<tspan class="${service}_line${i}_${view}" style="fill:transparent;text-shadow:0 0 transparent;" ${svgshift}>.</tspan>`
-          : `<tspan class="${service}_line${i}_${view}" ${svgshift}>${truncate(
-              text,
-              char[i]
-            )}</tspan>`;
+        line[i] = `${truncate(text, char[i])}`;
       }
-      if (view == "poster") {
-        this.content.innerHTML += `
-          <div id='main' class='${service}_${view}' style='${top}'>
-             <div class="${service}_container_${view}" style="background-image:url('${image}');">
-                <img src="${image}"/>
-                <ha-icon icon="${icon}" style="${dflag}"></ha-icon>
-                <div class="${service}_flag_${view}" style="${dflag}">
-                   <svg style="${dflag}" preserveAspectRatio="none" viewBox="0 0 100 100">
-                      <polygon points="100 25,65 0,100 0"></polygon>
-                   </svg>
+      this.content.innerHTML += `
+      <div id="blur">
+                <div class="ellipsis" id="name">${line[0]} · ${line[4]}</div>
+                <div class="ellipsis" id="state">${line[1]}<br/>${line[2]}</div>
                 </div>
-             </div>
-             <svg class='${service}_svg_${view}' viewBox="0 0 200 100">
-                <defs>
-                   <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" style="stop-color:rgb(20,20,20,1);stop-opacity:1" />
-                      <stop offset="2%" style="stop-color:${accent};stop-opacity:1" />
-                   </linearGradient>
-                </defs>
-                <rect width="500px" height="23px" fill="${svgshdw}"/>
-                <text>
-                   ${line[0]}
-                   <tspan dy="1.3em" style="font-size:3px;fill:transparent;text-shadow:0 0 transparent;">.</tspan>
-                   ${line[1]}${line[2]}${line[3]}${line[4]}
-                </text>
-             </svg>
-          </div>
         `;
-      } else {
-        this.content.innerHTML += `
-          <div class="${service}_${view}"
-             style="${top} ${shiftimg}background-image:url('${image}')">
-             <div class="${service}_fan_${view}">
-                <ha-icon icon="${icon}" style="${dflag}"></ha-icon>
-                <div class="${service}_flag_${view}" style="${dflag}">
-                   <svg style="${dflag}" preserveAspectRatio="none" viewBox="0 0 100 100">
-                      <polygon points="100 30,90 0,100 0"></polygon>
-                   </svg>
-                </div>
-                <svg class="${service}_svg_${view}"viewBox="0 0 200 100">
-                   <text>${line[0]}${line[1]}${line[2]}${line[3]}${
-          line[4]
-        }</text>
-                </svg>
-             </div>
-          </div>
-        `;
-      }
-      if (!this.querySelector('[id="umc_style"]')) this.appendChild(style);
     }
+    this.content.style.backgroundImage = "url(" + image + ")";
+    this.appendChild(style);
   }
   setConfig(config) {
-    if (!config.service && !config.entity)
-      throw new Error("Define entity.");
+    if (!config.service && !config.entity) throw new Error("Define entity.");
     this.config = config;
   }
   getCardSize() {
@@ -470,8 +319,9 @@ customElements.define("upcoming-media-card", UpcomingMediaCard);
 // Configure the preview in the Lovelace card picker
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'upcoming-media-card',
-  name: 'Upcoming Media Card',
+  type: "upcoming-media-card",
+  name: "Upcoming Media Card",
   preview: false,
-  description: 'The Upcoming Media card displays upcoming episodes and movies from services like: Plex, Kodi, Radarr, Sonarr, and Trakt.',
+  description:
+    "The Upcoming Media card displays upcoming episodes and movies from services like: Plex, Kodi, Radarr, Sonarr, and Trakt.",
 });
