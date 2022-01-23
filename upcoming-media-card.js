@@ -138,18 +138,19 @@ class UpcomingMediaCard extends HTMLElement {
           height: 100%;
           width: 100%;
           border-radius: var(--custom-button-card-border-radius); 
-          overflow: clip;
+          overflow: hidden;
         }
         #container {
           display: flex;
           flex-direction: column;
           width: 100%;
           font-family: Sf Display, Roboto; 
-          justify-content: end;
+          justify-content: flex-end;
           transition: none 0s ease 0s; 
           --mdc-ripple-color:rgba(255, 255, 255, 0.3); 
           color: rgba(255, 255, 255, 0.3); 
           background-color: rgba(115, 115, 115, 0.2); 
+          background-size: cover;
         }
         .ellipsis {
           text-overflow: ellipsis;
